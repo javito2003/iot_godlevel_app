@@ -52,7 +52,7 @@ export default {
   modules: [
     '@nuxtjs/pwa',
     '@nuxtjs/axios',
-    //'nuxt-highcharts',
+    'nuxt-highcharts',
   ],
 
 

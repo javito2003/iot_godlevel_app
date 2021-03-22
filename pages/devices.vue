@@ -35,7 +35,7 @@
               value="1"
               placeholder="Select Template"
               class="select-primary"
-              style="width:100%"
+              style="width: 100%"
             >
               <el-option
                 class="text-dark"
@@ -74,10 +74,9 @@
         </div>
 
         <el-table :data="devices">
-
           <el-table-column label="#" min-width="50" align="center">
             <div slot-scope="{ row, $index }">
-                {{$index + 1 }}
+              {{ $index + 1 }}
             </div>
           </el-table-column>
 
@@ -91,13 +90,20 @@
           ></el-table-column>
 
           <el-table-column label="Actions">
-
             <div slot-scope="{ row, $index }">
-                {{row.saverRule}}
-            <el-tooltip content="Database Saver">
-                
-                <base-switch @click="updateSaverRuleStatus($index)" :value="row.saverRule" type="primary" on-text="On" off-text="Off"></base-switch>
-            </el-tooltip>
+              <el-tooltip content="Saver Status" style="margin-right:10px">
+                <i class="fas fa-database " :class="{'text-success': row.saverRule, 'text-dark': !row.saverRule}"></i>
+              </el-tooltip>
+
+              <el-tooltip content="Database Saver">
+                <base-switch
+                  @click="updateSaverRuleStatus($index)"
+                  :value="row.saverRule"
+                  type="primary"
+                  on-text="On"
+                  off-text="Off"
+                ></base-switch>
+              </el-tooltip>
 
               <el-tooltip
                 content="Delete"
@@ -112,17 +118,16 @@
                   class="btn-link"
                   @click="deleteDevice(row)"
                 >
-                  <i class="tim-icons icon-simple-remove "></i>
+                  <i class="tim-icons icon-simple-remove"></i>
                 </base-button>
               </el-tooltip>
-
             </div>
-
           </el-table-column>
-
         </el-table>
       </card>
     </div>
+
+    <Json :value="devices"></Json>
   </div>
 </template>
 
@@ -135,7 +140,7 @@ export default {
     [Table.name]: Table,
     [TableColumn.name]: TableColumn,
     [Option.name]: Option,
-    [Select.name]: Select
+    [Select.name]: Select,
   },
   data() {
     return {
@@ -145,34 +150,33 @@ export default {
           dId: "8888",
           templateName: "Power Sensor",
           templateId: "984237562348756ldksjfh",
-          saverRule: false
+          saverRule: false,
         },
         {
           name: "Office",
           dId: "1111",
           templateName: "Power Sensor",
           templateId: "984237562348756ldksjfh",
-          saverRule: true
-
+          saverRule: true,
         },
         {
           name: "Farm",
           dId: "99999",
           templateName: "Power Sensor",
           templateId: "984237562348756ldksjfh",
-          saverRule: true
-        }
-      ]
+          saverRule: true,
+        },
+      ],
     };
   },
   methods: {
     deleteDevice(device) {
       alert("DELETING " + device.name);
     },
-    updateSaverRuleStatus(index){
-        console.log(index)
-        this.devices[index].saverRule = !this.devices[index].saverRule;
-    }
-  }
+    updateSaverRuleStatus(index) {
+      console.log(index);
+      this.devices[index].saverRule = !this.devices[index].saverRule;
+    },
+  },
 };
 </script>
