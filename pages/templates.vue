@@ -815,6 +815,9 @@ export default {
         this.widgets.push(JSON.parse(JSON.stringify(this.configIndicator)));
       }
     },
+    deleteWidget(index) {
+      this.widgets.splice(index,1)
+    },
     makeid(length) {
       var result = "";
       var characters =
