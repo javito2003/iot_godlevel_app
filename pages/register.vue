@@ -64,7 +64,7 @@
 </template>
 <script>
 export default {
-  //middleware: 'notAuthenticated',
+  middleware: 'notAuthenticated',
   layout: "auth",
   data() {
     return {
@@ -75,6 +75,48 @@ export default {
       }
     };
   },
+  methods: {
+    register() {
+      this.$axios.post("/register", this.user)
+      .then(res => {
+        //SUCCESS - User created
+        console.log(res.data);
+        if(res.data.success ===  true) {
+          this.$notify({
+            type: "success",
+            icon: "tim-icons icon-check-2",
+            message: "Success! Now you can login..."
+          })
+
+          this.user.name = ''
+          this.user.email = ''
+          this.user.password = ''
+          
+          $nuxt.$router.push('/login')
+          return
+        }
+      })
+      .catch(err => {
+        //ERROR - failed create user
+        console.log(err.response);
+        if(err.response.data.error === 'User validation failed: email: Error, email already exists'){
+          this.$notify({
+            type: "danger",
+            icon: "tim-icons icon-alert-circle-exc",
+            message: "User already exists"
+          })
+          return
+        }else{
+          this.$notify({
+            type: "danger",
+            icon: "tim-icons icon-alert-circle-exc",
+            message: "Error creating user"
+          })
+          return
+        }
+      })
+    }
+  }
 };
 </script>
 <style>

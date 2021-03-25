@@ -58,6 +58,7 @@ router.post("/login", async (req, res) => {
     if (bcrypt.compareSync(password, userDB.password)) {
       //DELETE PASSWORD FROM USER
       userDB.set("password", undefined, { strict: false });
+      userDB.set('email', undefined, { strict: false });
 
       const token = jwt.sign({ userData: userDB }, "SecurePasswordHere", {
         expiresIn: 60 * 60 * 24 * 30

@@ -13,6 +13,7 @@
               label="Device Name"
               type="text"
               placeholder="Ex: Home, Office..."
+              v-model="newDevice.name"
             >
             </base-input>
           </div>
@@ -22,6 +23,7 @@
               label="Device Id"
               type="text"
               placeholder="Ex: 7777-8888"
+              v-model="newDevice.dId"
             >
             </base-input>
           </div>
@@ -32,27 +34,16 @@
             </slot>
 
             <el-select
-              value="1"
+              v-model="selectedIndexTemplate"
               placeholder="Select Template"
               class="select-primary"
               style="width: 100%"
             >
               <el-option
+                v-for="(item, index) in templates" :key="index"
                 class="text-dark"
-                value="Template 1"
-                label="Template 1"
-              ></el-option>
-
-              <el-option
-                class="text-dark"
-                value="Template 2"
-                label="Template 2"
-              ></el-option>
-
-              <el-option
-                class="text-dark"
-                value="Template 3"
-                label="Template 3"
+                :value="index"
+                :label="item.name"
               ></el-option>
             </el-select>
           </div>
@@ -60,7 +51,7 @@
 
         <div class="row pull-right">
           <div class="col-12">
-            <base-button type="primary" class="mb-3" size="lg">Add</base-button>
+            <base-button type="primary" @click="createNewDevice()" class="mb-3" size="lg">Add</base-button>
           </div>
         </div>
       </card>
@@ -73,7 +64,7 @@
           <h4 class="card-title">Devices</h4>
         </div>
 
-        <el-table :data="devices">
+        <el-table :data="$store.state.devices">
           <el-table-column label="#" min-width="50" align="center">
             <div slot-scope="{ row, $index }">
               {{ $index + 1 }}
@@ -91,8 +82,14 @@
 
           <el-table-column label="Actions">
             <div slot-scope="{ row, $index }">
-              <el-tooltip content="Saver Status" style="margin-right:10px">
-                <i class="fas fa-database " :class="{'text-success': row.saverRule, 'text-dark': !row.saverRule}"></i>
+              <el-tooltip content="Saver Status" style="margin-right: 10px">
+                <i
+                  class="fas fa-database"
+                  :class="{
+                    'text-success': row.saverRule,
+                    'text-dark': !row.saverRule,
+                  }"
+                ></i>
               </el-tooltip>
 
               <el-tooltip content="Database Saver">
@@ -126,8 +123,7 @@
         </el-table>
       </card>
     </div>
-
-    <Json :value="devices"></Json>
+    <Json :value="$store.state.devices"/>
   </div>
 </template>
 
@@ -136,6 +132,7 @@ import { Table, TableColumn } from "element-ui";
 import { Select, Option } from "element-ui";
 
 export default {
+  middleware: "authenticated",
   components: {
     [Table.name]: Table,
     [TableColumn.name]: TableColumn,
@@ -144,38 +141,146 @@ export default {
   },
   data() {
     return {
-      devices: [
-        {
-          name: "Home",
-          dId: "8888",
-          templateName: "Power Sensor",
-          templateId: "984237562348756ldksjfh",
-          saverRule: false,
-        },
-        {
-          name: "Office",
-          dId: "1111",
-          templateName: "Power Sensor",
-          templateId: "984237562348756ldksjfh",
-          saverRule: true,
-        },
-        {
-          name: "Farm",
-          dId: "99999",
-          templateName: "Power Sensor",
-          templateId: "984237562348756ldksjfh",
-          saverRule: true,
-        },
-      ],
-    };
+      templates: [],
+      selectedIndexTemplate: null,
+      newDevice: {
+        name: "",
+        dId: '',
+        templateId: '',
+        templateName: '',
+      }
+    }
+  },
+  mounted() {
+    this.$store.dispatch("getDevices");
+    this.getTemplates()
   },
   methods: {
+    createNewDevice(){
+      if(this.newDevice.name == ''){
+        this.$notify({
+          type: 'warning',
+          icon: 'tim-icons icon-alert-circle-exc',
+          message: 'Device name is empty'
+        })
+        return
+      }
+      if(this.newDevice.dId == ''){
+        this.$notify({
+          type: 'warning',
+          icon: 'tim-icons icon-alert-circle-exc',
+          message: "Device ID is empty"
+        })
+        return
+      }
+
+      if(this.selectedIndexTemplate == null){
+        this.$notify({
+          type: 'warning',
+          icon: 'tim-icons icon-alert-circle-exc',
+          message: "Template is empty"
+        })
+        return
+      }
+
+
+      let config = {
+        headers: {
+          token: this.$store.state.auth.token,
+        }
+      }
+      //We write the name and the templateID selected in the object
+      this.newDevice.templateId = this.templates[this.selectedIndexTemplate]._id
+      this.newDevice.templateName = this.templates[this.selectedIndexTemplate].name
+
+      const toSend = {
+        newDevice : this.newDevice
+      }
+      this.$axios.post('/new-device', toSend, config)
+      .then(res => {
+        if(res.data.status == 'success') {
+
+          this.$notify({
+            type: 'success',
+            icon: "tim-icons icon-check-2",
+            message: "Success! Device was added"
+          })
+          this.$store.dispatch('getDevices')
+          return
+        }
+      })
+      .catch(err => {
+        if(err.response.data.success == false && err.response.data.error == 'Device validation failed: dId: Error, device already exists'){
+          this.$notify({
+            type: 'warning',
+            icon: "tim-icons icon-alert-circle-exc",
+            message: "The device is already registered in the system. Try another device Id"
+          })
+        }else{
+          this.$notify({
+            type: "warning",
+            icon: 'tim-icons icon-alert-circle-exc',
+            message: "Erro to cread a new device"
+          })
+        }
+      })
+    },
     deleteDevice(device) {
-      alert("DELETING " + device.name);
+      let config = {
+        headers: {
+          token: this.$store.state.auth.token,
+        },
+        params: {
+          dId: device.dId,
+        },
+      };
+
+      this.$axios
+        .delete("/device", config)
+        .then((res) => {
+          if (res.data.status == "success") {
+            this.$notify({
+              type: "success",
+              icon: "tim-icons icon-check-2",
+              message: device.name + " deleted!",
+            });
+
+            this.$store.dispatch("getDevices");
+          }
+          return;
+        })
+        .catch((err) => {
+          console.log(err.response);
+          this.$notify({
+            type: "danger",
+            icon: "tim-icons icon-alert-circle-exc",
+            message: "Error deleting " + device.name,
+          });
+          return;
+        });
     },
     updateSaverRuleStatus(index) {
       console.log(index);
       this.devices[index].saverRule = !this.devices[index].saverRule;
+    },
+    getTemplates() {
+      let config = {
+        headers: {
+          token: this.$store.state.auth.token,
+        },
+      };
+      this.$axios
+        .get("/templates", config)
+        .then((res) => {
+          this.templates = res.data.data;
+        })
+        .catch((err) => {
+          this.$notify({
+            type: "danger",
+            icon: "tim-icons icon-alert-circle-exc",
+            message: "Error to get templates",
+          });
+        });
     },
   },
 };

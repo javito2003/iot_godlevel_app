@@ -15,7 +15,7 @@
               v-model="widgetType"
               class="select-success"
               placeholder="Select Widget"
-              style="width: 100%;"
+              style="width: 100%"
             >
               <el-option
                 class="text-dark"
@@ -88,7 +88,7 @@
                 v-model="ncConfig.class"
                 class="select-success"
                 placeholder="Select Class"
-                style="width: 100%;"
+                style="width: 100%"
               >
                 <el-option
                   class="text-success"
@@ -118,7 +118,7 @@
                 v-model="ncConfig.column"
                 class="select-success"
                 placeholder="Select Column Width"
-                style="width: 100%;"
+                style="width: 100%"
               >
                 <el-option
                   class="text-dark"
@@ -196,7 +196,7 @@
                 v-model="iotSwitchConfig.class"
                 class="select-success"
                 placeholder="Select Class"
-                style="width: 100%;"
+                style="width: 100%"
               >
                 <el-option
                   class="text-success"
@@ -226,7 +226,7 @@
                 v-model="iotSwitchConfig.column"
                 class="select-success"
                 placeholder="Select Column Width"
-                style="width: 100%;"
+                style="width: 100%"
               >
                 <el-option
                   class="text-dark"
@@ -318,7 +318,7 @@
                 v-model="configButton.class"
                 class="select-success"
                 placeholder="Select Class"
-                style="width: 100%;"
+                style="width: 100%"
               >
                 <el-option
                   class="text-success"
@@ -348,7 +348,7 @@
                 v-model="configButton.column"
                 class="select-success"
                 placeholder="Select Column Width"
-                style="width: 100%;"
+                style="width: 100%"
               >
                 <el-option
                   class="text-dark"
@@ -426,7 +426,7 @@
                 v-model="iotIndicatorConfig.class"
                 class="select-success"
                 placeholder="Select Class"
-                style="width: 100%;"
+                style="width: 100%"
               >
                 <el-option
                   class="text-success"
@@ -456,7 +456,7 @@
                 v-model="iotIndicatorConfig.column"
                 class="select-success"
                 placeholder="Select Column Width"
-                style="width: 100%;"
+                style="width: 100%"
               >
                 <el-option
                   class="text-dark"
@@ -554,12 +554,16 @@
 
     <!-- DASHBOARD PREVIEW -->
     <div class="row">
-      <div v-for="(widget, index) of widgets" :key="index" :class="[widget.column]">
+      <div
+        v-for="(widget, index) of widgets"
+        :key="index"
+        :class="[widget.column]"
+      >
         <i
           aria-hidden="true"
           class="fa fa-trash text-warning pull-right"
           @click="deleteWidget(index)"
-          style="margin-bottom: 10px;"
+          style="margin-bottom: 10px"
         ></i>
 
         <Rtnumberchart
@@ -618,6 +622,7 @@
               type="primary"
               class="mb-3 pull-right"
               size="lg"
+              :disabled="widgets.length == 0"
               @click="saveTemplate()"
             >
               Save Template
@@ -672,7 +677,7 @@
                     size="sm"
                     class="btn-link"
                   >
-                    <i class="tim-icons icon-simple-remove "></i>
+                    <i class="tim-icons icon-simple-remove"></i>
                   </base-button>
                 </el-tooltip>
               </div>
@@ -682,8 +687,6 @@
       </card>
     </div>
 
-    <!-- JSONS -->
-    <Json :value="widgets"></Json>
   </div>
 </template>
 
@@ -691,11 +694,12 @@
 import { Table, TableColumn } from "element-ui";
 import { Select, Option } from "element-ui";
 export default {
+  middleware: "authenticated",
   components: {
     [Table.name]: Table,
     [TableColumn.name]: TableColumn,
     [Option.name]: Option,
-    [Select.name]: Select
+    [Select.name]: Select,
   },
   data() {
     return {
@@ -708,7 +712,7 @@ export default {
         userId: "sampleuserid",
         selectedDevice: {
           name: "Home",
-          dId: "8888"
+          dId: "8888",
         },
         variableFullName: "temperature",
         variable: "varname",
@@ -719,26 +723,26 @@ export default {
         widget: "numberchart",
         icon: "fa-bath",
         chartTimeAgo: 1566,
-        demo: true
+        demo: true,
       },
       iotSwitchConfig: {
         userId: "userid",
         selectedDevice: {
           name: "Home",
-          dId: "8888"
+          dId: "8888",
         },
         variableFullName: "Luz",
         variable: "varname",
         class: "danger",
         widget: "switch",
         icon: "fa-bath",
-        column: "col-6"
+        column: "col-6",
       },
       configButton: {
         userId: "userid",
         selectedDevice: {
           name: "Home",
-          dId: "8888"
+          dId: "8888",
         },
         variableFullName: "temperature",
         text: "send",
@@ -746,20 +750,20 @@ export default {
         variable: "varname",
         widget: "button",
         icon: "fa-bath",
-        column: "col-6"
+        column: "col-6",
       },
       iotIndicatorConfig: {
         userId: "userid",
         selectedDevice: {
           name: "Home",
-          dId: "8888"
+          dId: "8888",
         },
         variableFullName: "temperature",
         variable: "varname",
         class: "success",
         widget: "indicator",
         icon: "fa-bath",
-        column: "col-6"
+        column: "col-6",
       },
       configButton: {
         userId: "userid",
@@ -768,7 +772,7 @@ export default {
           dId: "8888",
           templateName: "Power Sensor",
           templateId: "984237562348756ldksjfh",
-          saverRule: false
+          saverRule: false,
         },
         variableFullName: "Pump",
         variable: "var1",
@@ -776,7 +780,7 @@ export default {
         column: "col-4",
         widget: "indicator",
         class: "danger",
-        message: "{'fanstatus': 'stop'}"
+        message: "{'fanstatus': 'stop'}",
       },
       configIndicator: {
         userId: "userid",
@@ -785,16 +789,19 @@ export default {
           dId: "8888",
           templateName: "Power Sensor",
           templateId: "984237562348756ldksjfh",
-          saverRule: false
+          saverRule: false,
         },
         variableFullName: "Pump",
         variable: "var1",
         icon: "fa-sun",
         column: "col-6",
         widget: "indicator",
-        class: "success"
-      }
+        class: "success",
+      },
     };
+  },
+  mounted() {
+    this.getTemplates();
   },
   methods: {
     addNewWidget() {
@@ -816,7 +823,7 @@ export default {
       }
     },
     deleteWidget(index) {
-      this.widgets.splice(index,1)
+      this.widgets.splice(index, 1);
     },
     makeid(length) {
       var result = "";
@@ -829,7 +836,90 @@ export default {
         );
       }
       return result;
-    }
-  }
+    },
+    saveTemplate() {
+      let config = {
+        headers: {
+          token: this.$store.state.auth.token,
+        },
+      };
+      const body = {
+        template: {
+          name: this.templateName,
+          description: this.templateDescription,
+          widgets: this.widgets,
+        },
+      };
+      this.$axios
+        .post("/template", body, config)
+        .then((res) => {
+          if (res.data.status == "success") {
+            this.$notify({
+              type: "success",
+              icon: "tim-icons icon-alert-circle-exc",
+              message: "Template created successfully",
+            });
+            this.templateName = '',
+            this.templateDescription = '',
+            this.widgets.length = 0
+          }
+          this.getTemplates();
+          return;
+        })
+        .catch((err) => {
+          this.$notify({
+            type: "danger",
+            icon: "tim-icons icon-alert-circle-exc",
+            message: "Error creating template...",
+          });
+          return;
+        });
+    },
+    getTemplates() {
+      let config = {
+        headers: {
+          token: this.$store.state.auth.token,
+        },
+      };
+      this.$axios
+        .get("/templates", config)
+        .then((res) => {
+          this.templates = res.data.data;
+        })
+        .catch((err) => {
+          this.$notify({
+            type: "danger",
+            icon: "tim-icons icon-alert-circle-exc",
+            message: "Error to get templates",
+          });
+        });
+    },
+    deleteTemplate(template) {
+      let config = {
+        headers: {
+          token: this.$store.state.auth.token,
+        },
+        params: {
+          templateId: template._id,
+        },
+      };
+
+      this.$axios
+        .delete("/template", config)
+        .then((res) => {
+          console.log(res.data);
+          if (res.data.status == "success") {
+            this.$notify({
+              type: "success",
+              icon: "tim-icons icon-check-2",
+              message: template.name + " deleted!",
+            });
+            this.getTemplates();
+          }
+          return;
+        })
+        .catch((err) => {});
+    },
+  },
 };
 </script>

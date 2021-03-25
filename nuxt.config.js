@@ -39,6 +39,7 @@ export default {
   */
   plugins: [
     `~/plugins/dashboard-plugin.js`,
+     '~/plugins/vuex-persist'
   ],
   //autoimport
   components: true,

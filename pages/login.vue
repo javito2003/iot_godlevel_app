@@ -55,8 +55,8 @@
 </template>
 
 <script>
-const Cookie = process.client ? require("js-cookie") : undefined;
 export default {
+  middleware: 'notAuthenticated',
   name: "login-page",
   layout: "auth",
   data() {
@@ -67,6 +67,55 @@ export default {
       }
     };
   },
+  methods: {
+    login() {
+      this.$axios.post("/login", this.user)
+      .then(res => {
+        //SUCCESS - User created
+        console.log(res.data);
+        if(res.data.success ===  true) {
+          this.$notify({
+            type: "success",
+            icon: "tim-icons icon-check-2",
+            message: "Success! Welcome " + res.data.userData.name
+          })
+
+          const auth = {
+            token: res.data.token,
+            userData: res.data.userData
+          }
+
+          //token to store 
+          this.$store.commit('setAuth', auth)
+
+          //Set auth object in localStorage
+          localStorage.setItem('auth', JSON.stringify(auth))
+
+          $nuxt.$router.push('/dashboard')
+
+          return
+        }
+      })
+      .catch(err => {
+        //ERROR - failed create user
+        if(err.response.data.error === 'User validation failed: email: Error, email already exists'){
+          this.$notify({
+            type: "danger",
+            icon: "tim-icons icon-alert-circle-exc",
+            message: "User already exists"
+          })
+          return
+        }else{
+          this.$notify({
+            type: "danger",
+            icon: "tim-icons icon-alert-circle-exc",
+            message: "Error creating user"
+          })
+          return
+        }
+      })
+    }
+  }
 };
 </script>
 
