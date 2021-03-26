@@ -17,10 +17,9 @@ router.post("/new-device", checkAuth, async (req, res) => {
 
     newDevice.userId = userId;
     newDevice.createdTime = Date.now();
-
-    const device = await Device.create(newDevice);
-
     await createSaverRule(userId, newDevice.dId, true);
+    
+    const device = await Device.create(newDevice);
 
     await selectedDevice(userId, newDevice.dId);
 
@@ -115,6 +114,23 @@ router.put("/device", checkAuth, async (req, res) => {
   }
 });
 
+
+//SAVER-RULE STATUS UPDATER
+router.put('/saver-rule', checkAuth, async (req, res) => {
+  const rule = req.body.rule
+  await updateSaverRuleStatus(rule.emqxRuleId, rule.status)
+
+  const toSend = {
+    status: "success"
+  }
+
+  res.json(toSend)
+
+  return
+})
+
+
+
 // setTimeout(() => {
 //   createSaverRule("121212", "1111", false);
 // }, 2000);
@@ -159,13 +175,16 @@ async function getSaverRules(userId) {
 
 //create saver rule
 async function createSaverRule(userId, dId, status) {
+  console.log(userId);
+  console.log(dId);
+  console.log(status);
   try {
     const url = "http://localhost:8085/api/v4/rules";
 
     const topic = userId + "/" + dId + "/+/sdata";
 
     const rawsql =
-      'SELECT topic/ payload FROM "' + topic + '" WHERE payload.save = 1';
+      'SELECT topic, payload FROM "' + topic + '" WHERE payload.save = 1';
 
     var newRule = {
       rawsql: rawsql,
@@ -177,7 +196,7 @@ async function createSaverRule(userId, dId, status) {
             payload_tmpl:
               '{"userId":"' +
               userId +
-              '","payload": ${payload},"topic" : "${topic}"'
+              '","payload":${payload},"topic" :"${topic}"}'
           }
         }
       ],
@@ -187,7 +206,8 @@ async function createSaverRule(userId, dId, status) {
 
     //save rule in emqx
     const res = await axios.post(url, newRule, auth);
-
+    console.log(newRule);
+    console.log(res);
     if (res.status === 200 && res.data.data) {
       console.log(res.data.data);
 
@@ -241,7 +261,7 @@ async function deleteSaverRule(dId) {
 
     return true;
   } catch (error) {
-    console.log("Error to delete rule");
+    console.log("Error to delete rule".red);
     console.log(error);
     return false;
   }
