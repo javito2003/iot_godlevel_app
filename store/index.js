@@ -1,6 +1,7 @@
 export const statte = () => ({
   devices: [],
   auth: null,
+  selectedDevice: {}
 });
 
 export const mutations = {
@@ -9,6 +10,9 @@ export const mutations = {
     },
     setDevices(state, devices){
         state.devices = devices;
+    },
+    setSelectedDevice(state,device){
+      state.selectedDevice = device;
     }
 };
 
@@ -32,6 +36,14 @@ export const actions = {
         this.$axios.get('/devices', config)
         .then(res => {
             let devices = res.data.data
+
+            res.data.data.forEach((device, index) => {
+              if (device.selected) {
+                this.commit('setSelectedDevice', device)
+                $nuxt.$emit('selectedDeviceIndex', index)
+              }
+            })
+
             this.commit("setDevices", devices)
         })
         .catch(err => {

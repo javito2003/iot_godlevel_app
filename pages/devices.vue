@@ -123,6 +123,7 @@
         </el-table>
       </card>
     </div>
+    <Json :value="$store.state.selectedDevice"/>
     <Json :value="$store.state.devices"/>
   </div>
 </template>
@@ -152,7 +153,7 @@ export default {
     }
   },
   mounted() {
-    this.$store.dispatch("getDevices");
+
     this.getTemplates()
   },
   methods: {
