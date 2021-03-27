@@ -8,7 +8,8 @@ const checkAuth = require("../middlewares/authentication");
 //IMPORT MODEL
 const Device = require("../models/device.js");
 const SaverRule = require("../models/emqx_saver_rule");
-const Template = require("../models/template")
+const Template = require("../models/template");
+const AlarmRule = require("../models/emqx_alarm_rule");
 
 //POST request - create a new device
 router.post("/new-device", checkAuth, async (req, res) => {
@@ -19,7 +20,7 @@ router.post("/new-device", checkAuth, async (req, res) => {
     newDevice.userId = userId;
     newDevice.createdTime = Date.now();
     await createSaverRule(userId, newDevice.dId, true);
-    
+
     const device = await Device.create(newDevice);
 
     await selectedDevice(userId, newDevice.dId);
@@ -53,6 +54,8 @@ router.get("/devices", checkAuth, async (req, res) => {
     //Get templates
     const templates = await getTemplates(userId);
 
+    //Get alarm rules
+    const alarmRules = await getAlarmRules(userId);
 
     //saver rules to -> devices
     devices.forEach((device, index) => {
@@ -61,7 +64,10 @@ router.get("/devices", checkAuth, async (req, res) => {
       )[0];
       devices[index].template = templates.filter(
         template => template._id == device.templateId
-      )[0]
+      )[0];
+      devices[index].alarmRules = alarmRules.filter(
+        alarmRule => alarmRule.dId == device.dId
+      );
     });
 
     const toSend = {
@@ -84,12 +90,11 @@ router.delete("/device", checkAuth, async (req, res) => {
   try {
     const userId = req.userData._id;
     const dId = req.query.dId;
-    
-    //Delete saver rule 
-    await deleteSaverRule(dId)
+
+    //Delete saver rule
+    await deleteSaverRule(dId);
 
     const result = await Device.deleteOne({ userId: userId, dId: dId });
-
 
     const toSend = {
       status: "success",
@@ -123,22 +128,19 @@ router.put("/device", checkAuth, async (req, res) => {
   }
 });
 
-
 //SAVER-RULE STATUS UPDATER
-router.put('/saver-rule', checkAuth, async (req, res) => {
-  const rule = req.body.rule
-  await updateSaverRuleStatus(rule.emqxRuleId, rule.status)
+router.put("/saver-rule", checkAuth, async (req, res) => {
+  const rule = req.body.rule;
+  await updateSaverRuleStatus(rule.emqxRuleId, rule.status);
 
   const toSend = {
     status: "success"
-  }
+  };
 
-  res.json(toSend)
+  res.json(toSend);
 
-  return
-})
-
-
+  return;
+});
 
 // setTimeout(() => {
 //   createSaverRule("121212", "1111", false);
@@ -182,7 +184,15 @@ async function getTemplates(userId) {
   }
 }
 
-
+//GET ALARM rules
+async function getAlarmRules(userId) {
+  try {
+    const rules = await AlarmRule.find({ userId: userId });
+    return rules;
+  } catch (error) {
+    return "error";
+  }
+}
 
 //get saver rule
 async function getSaverRules(userId) {

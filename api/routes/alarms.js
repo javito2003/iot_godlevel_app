@@ -37,6 +37,45 @@ router.post("/alarm-rule", checkAuth, async (req, res) => {
   }
 });
 
+//edit alarm-rule
+router.put('/alarm-rule', checkAuth, async (req, res) => {
+  var rule = req.body.rule
+  var response = await updateAlarmRuleStatus(rule.emqxRuleId, rule.status)
+  if (response) {
+    const toSend = {
+      status: 'success',
+    }
+    return res.json(toSend)
+  }else{
+    const toSend = {
+      status: 'error'
+    }
+    return res.json(toSend)
+  }
+})
+
+//delete alarm rule
+router.delete('/alarm-rule',checkAuth, async(req,res) => {
+  var emqxRuleId = req.query.emqxRuleId
+  var r = await deleteAlarmRule(emqxRuleId)
+
+  if (r) {
+    const toSend = {
+      status: 'success'
+    }
+    return res.json(toSend)
+  }
+  else{
+    const toSend = {
+      status: 'error'
+    }
+    return res.json(toSend)
+  }
+})
+
+
+
+
 /* FUNCTIONS */
 
 //create alarm
@@ -103,6 +142,35 @@ async function createAlarmRule(newAlarm) {
 
     return true
 }
+}
+
+//update alarm status
+async function updateAlarmRuleStatus(emqxRuleId, status) {
+  const url = "http://localhost:8085/api/v4/rules/" + emqxRuleId
+  const newRule = {
+    enabled: status
+  }
+  const res = await axios.put(url, newRule, auth);
+  if (res.data.data && res.status === 200) {
+    await AlarmRule.updateOne({emqxRuleId: emqxRuleId}, {status: status})
+    console.log("Saver rule status updated...".green);
+    return true
+  }else{
+    return "error"
+  }
+}
+
+//delete alarm
+async function deleteAlarmRule(emqxRuleId){
+  try {
+    const url = "http://localhost:8085/api/v4/rules/" + emqxRuleId
+    const emqxRule = await axios.delete(url, auth)
+    const deleted = await AlarmRule.deleteOne({emqxRuleId: emqxRuleId})
+    return "success"
+  } catch (error) {
+    console.log(error);
+    return "error"
+  }
 }
 
 module.exports = router;
