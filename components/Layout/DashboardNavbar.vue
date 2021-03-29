@@ -42,28 +42,21 @@
         class="nav-item"
       >
         <template slot="title">
-          <div class="notification d-none d-lg-block d-xl-block"></div>
+          <div v-if="this.$store.state.notifications.length > 0" class="notification d-none d-lg-block d-xl-block"></div>
           <i class="tim-icons icon-sound-wave"></i>
           <p class="d-lg-none">New Notifications</p>
         </template>
-        <li class="nav-link">
-          <a href="#" class="nav-item dropdown-item"
-            >Mike John responded to your email</a
-          >
-        </li>
-        <li class="nav-link">
-          <a href="#" class="nav-item dropdown-item">You have 5 more tasks</a>
-        </li>
-        <li class="nav-link">
-          <a href="#" class="nav-item dropdown-item"
-            >Your friend Michael is in town</a
-          >
-        </li>
-        <li class="nav-link">
-          <a href="#" class="nav-item dropdown-item">Another notification</a>
-        </li>
-        <li class="nav-link">
-          <a href="#" class="nav-item dropdown-item">Another one</a>
+        <li @click="notificationReaded(notification._id)" class="nav-link" v-for="(notification,index) in $store.state.notifications" :key="index">
+          <a href="#" class="nav-item dropdown-item">
+            <b style="color:orangered">{{unixToDate(notification.time)}}</b>
+            <div style="margin-left:50px">
+              <b>Device: </b> {{notification.deviceName}} <br>
+              <b>Variable: </b> {{notification.variable}} <br>
+              <b>Limit: </b> {{notification.value}} <br>
+              <b>Condition: </b> {{notification.condition}} <br>
+              <b>Value: </b> {{notification.payload.value}}
+            </div>
+          </a>
         </li>
       </base-dropdown>
       <base-dropdown
@@ -164,6 +157,26 @@ export default {
         console.log(err.response);
       })
     },
+    notificationReaded(notifId){
+      let config = {
+        headers: {
+          token: this.$store.state.auth.token,
+        }
+      }
+      const toSend = {
+        notifId: notifId
+      }
+      this.$axios.put('/notifications',toSend, config)
+      .then(res => {
+        console.log(res.data);
+        this.$store.dispatch('getNotifications')
+      })
+      .catch((err) =>{
+        console.log(err.response);
+      })
+
+    },
+
     capitalizeFirstLetter(string) {
       if (!string || typeof string !== "string") {
         return "";
@@ -179,6 +192,32 @@ export default {
     toggleMenu() {
       this.showMenu = !this.showMenu;
     },
+    //UNIX TO DATE
+    unixToDate(s){
+      var d = new Date(parseInt(s)),// Conver the passed timestamp to milliseconds
+      yyyy = d.getFullYear(),
+      mm = ('0' + (d.getMonth() + 1)).slice(-2),//Months are zero based. Add leading 0
+      dd = ('0' + d.getDate()).slice(-2), //Add leading 0
+      hh = d.getHours(),
+      h = hh,
+      min = ('0' + d.getMinutes()).slice(-2), //Add leading 0
+      ampm = 'AM',
+      time;
+
+      if (hh > 12) {
+        h = hh - 12
+        ampm = 'PM'
+      }else if(hh === 12){
+        h = 12
+        ampm = 'PM'
+      } else if(hh == 0){
+        h = 12
+      }
+
+      time = dd + '/' + mm + '/' + yyyy + ', ' + h + ":" + min + ' ' + ampm
+
+      return time
+    }
   },
 };
 </script>

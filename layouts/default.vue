@@ -12,7 +12,7 @@
           :link="{
             name: 'Dashboard',
             icon: 'tim-icons icon-chart-pie-36',
-            path: '/dashboard'
+            path: '/dashboard',
           }"
         >
         </sidebar-item>
@@ -21,7 +21,7 @@
           :link="{
             name: 'Devices',
             icon: 'tim-icons icon-chart-pie-36',
-            path: '/devices'
+            path: '/devices',
           }"
         >
         </sidebar-item>
@@ -30,29 +30,24 @@
           :link="{
             name: 'Alarms',
             icon: 'tim-icons icon-chart-pie-36',
-            path: '/alarms'
+            path: '/alarms',
           }"
         >
         </sidebar-item>
 
-
         <sidebar-item
-        :link="{
-          name: 'Templates',
-          icon: 'tim-icons icon-chart-pie-36',
-          path: '/templates'
-        }"
-      >
-      </sidebar-item>
-
-
-
-
+          :link="{
+            name: 'Templates',
+            icon: 'tim-icons icon-chart-pie-36',
+            path: '/templates',
+          }"
+        >
+        </sidebar-item>
       </template>
     </side-bar>
 
-        <!--Share plugin (for demo purposes). You can remove it if don't plan on using it-->
-        <sidebar-share :background-color.sync="sidebarBackground"> </sidebar-share>
+    <!--Share plugin (for demo purposes). You can remove it if don't plan on using it-->
+    <sidebar-share :background-color.sync="sidebarBackground"> </sidebar-share>
 
     <div class="main-panel" :data="sidebarBackground">
       <dashboard-navbar></dashboard-navbar>
@@ -93,6 +88,7 @@ import DashboardNavbar from "@/components/Layout/DashboardNavbar.vue";
 import ContentFooter from "@/components/Layout/ContentFooter.vue";
 import DashboardContent from "@/components/Layout/Content.vue";
 import { SlideYDownTransition, ZoomCenterTransition } from "vue2-transitions";
+import mqtt from "mqtt";
 
 export default {
   components: {
@@ -101,17 +97,18 @@ export default {
     DashboardContent,
     SlideYDownTransition,
     ZoomCenterTransition,
-    SidebarShare
+    SidebarShare,
   },
   data() {
     return {
-      sidebarBackground: "blue" //vue|blue|orange|green|red|primary
+      sidebarBackground: "blue", //vue|blue|orange|green|red|primary,
+      client: null,
     };
   },
   computed: {
     isFullScreenRoute() {
       return this.$route.path === "/maps/full-screen";
-    }
+    },
   },
   methods: {
     toggleSidebar() {
@@ -132,11 +129,103 @@ export default {
       } else {
         docClasses.add("perfect-scrollbar-off");
       }
-    }
+    },
+    startMqttClient() {
+      const options = {
+        host: "localhost",
+        port: 8083,
+        endpoint: "/mqtt",
+        clean: true,
+        connectTimeout: 5000,
+        reconnectPeriod: 5000,
+
+        //Certification information
+        clientId:
+          "web_" +
+          this.$store.state.auth.userData.name +
+          "_" +
+          Math.floor(Math.random() * 100000 + 1),
+        username: "superuser",
+        password: "superuser",
+      };
+      const deviceSubscribeTopic =
+        this.$store.state.auth.userData._id + "/+/+/sdata";
+      const notifSubscribeTopic =
+        this.$store.state.auth.userData._id + "/+/+/notif";
+      const connectUrl =
+        "ws://" + options.host + ":" + options.port + options.endpoint;
+
+      try {
+        this.client = mqtt.connect(connectUrl, options);
+      } catch (error) {
+        console.log(error);
+      }
+
+      this.client.on("connect", () => {
+        console.log("Connection successfully");
+        //Device subscription
+        this.client.subscribe(deviceSubscribeTopic, { qos: 0 }, (err) => {
+          if (err) {
+            console.log("Error in sdata suscription");
+            console.log(error);
+            return;
+          }
+          console.log("Device subscription success");
+          console.log(deviceSubscribeTopic);
+        });
+        //Notif suscription
+        this.client.subscribe(notifSubscribeTopic, { qos: 0 }, (err) => {
+          if (err) {
+            console.log("Error in sdata suscription");
+            console.log(error);
+            return;
+          }
+          console.log("Notif suscription success");
+          console.log(notifSubscribeTopic);
+        });
+      });
+
+      this.client.on("error", (error) => {
+        console.log("Connection failed", error);
+      });
+      this.client.on("reconnect", (error) => {
+        console.log("Reconnecting:", error);
+      });
+
+      this.client.on("message", (topic, message) => {
+        console.log("Message from topic  " + topic + "-> ");
+        console.log(message.toString());
+        try {
+          const splittedTopic = topic.split("/");
+          const msgType = splittedTopic[3];
+          if (msgType == "notif") {
+            this.$notify({
+              type: "danger",
+              icon: "tim-icons icon-alert-circle-exc",
+              message: message.toString(),
+            });
+            this.$store.dispatch("getNotifications");
+            return;
+          } else if (msgType == "sdata") {
+            $nuxt.$emit(topic, JSON.parse(message.toString()));
+            return;
+          } else {
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      });
+
+      $nuxt.$on('mqtt-sender', (toSend) => {
+        this.client.publish(toSend.topic, JSON.stringify(toSend.msg))
+      })
+    },
   },
   mounted() {
     this.initScrollbar();
-  }
+    this.startMqttClient();
+    this.$store.dispatch("getNotifications");
+  },
 };
 </script>
 <style lang="scss">

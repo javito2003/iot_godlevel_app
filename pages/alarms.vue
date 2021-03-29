@@ -192,6 +192,7 @@ export default {
       newRule: {
         dId: null,
         status: true,
+        deviceName: null,
         variableFullName: null,
         variable: null,
         value: null,
@@ -200,8 +201,8 @@ export default {
       },
     };
   },
-  mounted(){
-    console.log(this.$store.state.selectedDevice.alarmRules)
+  mounted() {
+    console.log(this.$store.state.selectedDevice.alarmRules);
   },
   methods: {
     createNewRule() {
@@ -239,6 +240,7 @@ export default {
       }
 
       this.newRule.dId = this.$store.state.selectedDevice.dId;
+      this.newRule.deviceName = this.$store.state.selectedDevice.name;
       this.newRule.variableFullName = this.$store.state.selectedDevice.template.widgets[
         this.selectedWidgetIndex
       ].variableFullName;
@@ -271,7 +273,7 @@ export default {
               icon: "tim-icons icon-check-2",
               message: "Success! Alarm rule was added successfully",
             });
-            this.$store.dispatch('getDevices')
+            this.$store.dispatch("getDevices");
             return;
           }
         })
@@ -286,61 +288,63 @@ export default {
         });
     },
 
-    updateStatusRule(rule){
+    updateStatusRule(rule) {
       let config = {
         headers: {
           token: this.$store.state.auth.token,
-        }
-      }
-      var ruleCopy = JSON.parse(JSON.stringify(rule))
-      ruleCopy.status = !ruleCopy.status
+        },
+      };
+      var ruleCopy = JSON.parse(JSON.stringify(rule));
+      ruleCopy.status = !ruleCopy.status;
 
-      const toSend = {rule: ruleCopy}
+      const toSend = { rule: ruleCopy };
 
-      this.$axios.put('/alarm-rule', toSend, config)
-      .then(res => {
-        if (res.data.status == 'success') {
-          this.$store.dispatch('getDevices')
-          return
-        }
-      })
-      .catch(err => {
-        console.log(err.response);
-      })
+      this.$axios
+        .put("/alarm-rule", toSend, config)
+        .then((res) => {
+          if (res.data.status == "success") {
+            this.$store.dispatch("getDevices");
+            return;
+          }
+        })
+        .catch((err) => {
+          console.log(err.response);
+        });
     },
 
-    deleteDevice(rule){
+    deleteDevice(rule) {
       let config = {
         headers: {
           token: this.$store.state.auth.token,
         },
         params: {
-          emqxRuleId: rule.emqxRuleId
-        }
-      }
+          emqxRuleId: rule.emqxRuleId,
+        },
+      };
 
-      this.$axios.delete('/alarm-rule', config)
-      .then(res => {
-        if (res.data.status == 'success') {
-          this.$notify({
-            type: "success",
-            icon: "tim-icons icon-check-2",
-            message: "Success! Alarm rule was deleted"
-          })
-          this.$store.dispatch('getDevices')
-          return
-        }
-      })
-      .catch(err => {
-        console.log(err.response);
-        this.$notify({
-          type: "error",
-          icon: "tim-icons icon-alert-circle-exc",
-          message: "Error to delete a alarm rule"
+      this.$axios
+        .delete("/alarm-rule", config)
+        .then((res) => {
+          if (res.data.status == "success") {
+            this.$notify({
+              type: "success",
+              icon: "tim-icons icon-check-2",
+              message: "Success! Alarm rule was deleted",
+            });
+            this.$store.dispatch("getDevices");
+            return;
+          }
         })
-        return
-      })
-    }
+        .catch((err) => {
+          console.log(err.response);
+          this.$notify({
+            type: "error",
+            icon: "tim-icons icon-alert-circle-exc",
+            message: "Error to delete a alarm rule",
+          });
+          return;
+        });
+    },
   },
 };
 </script>
