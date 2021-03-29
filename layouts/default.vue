@@ -103,6 +103,23 @@ export default {
     return {
       sidebarBackground: "blue", //vue|blue|orange|green|red|primary,
       client: null,
+      options: {
+        host: "localhost",
+        port: 8083,
+        endpoint: "/mqtt",
+        clean: true,
+        connectTimeout: 5000,
+        reconnectPeriod: 5000,
+
+        //Certification information
+        clientId:
+          "web_" +
+          this.$store.state.auth.userData.name +
+          "_" +
+          Math.floor(Math.random() * 100000 + 1),
+        username: "",
+        password: "",
+      },
     };
   },
   computed: {
@@ -130,33 +147,22 @@ export default {
         docClasses.add("perfect-scrollbar-off");
       }
     },
-    startMqttClient() {
-      const options = {
-        host: "localhost",
-        port: 8083,
-        endpoint: "/mqtt",
-        clean: true,
-        connectTimeout: 5000,
-        reconnectPeriod: 5000,
+    async startMqttClient() {
+      await this.getMqttCredentials();
 
-        //Certification information
-        clientId:
-          "web_" +
-          this.$store.state.auth.userData.name +
-          "_" +
-          Math.floor(Math.random() * 100000 + 1),
-        username: "superuser",
-        password: "superuser",
-      };
       const deviceSubscribeTopic =
         this.$store.state.auth.userData._id + "/+/+/sdata";
       const notifSubscribeTopic =
         this.$store.state.auth.userData._id + "/+/+/notif";
       const connectUrl =
-        "ws://" + options.host + ":" + options.port + options.endpoint;
+        "ws://" +
+        this.options.host +
+        ":" +
+        this.options.port +
+        this.options.endpoint;
 
       try {
-        this.client = mqtt.connect(connectUrl, options);
+        this.client = mqtt.connect(connectUrl, this.options);
       } catch (error) {
         console.log(error);
       }
@@ -190,8 +196,12 @@ export default {
       });
       this.client.on("reconnect", (error) => {
         console.log("Reconnecting:", error);
+        this.getMqttCredentialsForReconnection()
       });
-
+      this.client.on("disconnect", (error) => {
+        console.log('MQTT disconnect EVENT FIRED', error);
+        this.getMqttCredentialsForReconnection()
+      })
       this.client.on("message", (topic, message) => {
         console.log("Message from topic  " + topic + "-> ");
         console.log(message.toString());
@@ -216,15 +226,86 @@ export default {
         }
       });
 
-      $nuxt.$on('mqtt-sender', (toSend) => {
-        this.client.publish(toSend.topic, JSON.stringify(toSend.msg))
-      })
+      $nuxt.$on("mqtt-sender", (toSend) => {
+        this.client.publish(toSend.topic, JSON.stringify(toSend.msg));
+      });
     },
+    async getMqttCredentials() {
+      try {
+        const config = {
+          headers: {
+            token: this.$store.state.auth.token,
+          },
+        };
+        const credentials = await this.$axios.post(
+          "/getmqttcredentials",
+          null,
+          config
+        );
+        console.log(credentials.data);
+        if (credentials.data.status === "success") {
+          this.options.username = credentials.data.username;
+          this.options.password = credentials.data.password;
+        } else {
+          this.$notify({
+            type: "danger",
+            icon: "tim-icons icon-alert-circle-exc",
+            message: "Something's wrong. Please try again",
+          });
+          return;
+        }
+      } catch (error) {
+        console.log(error.response);
+        this.$notify({
+          type: "danger",
+          icon: "tim-icons icon-alert-circle-exc",
+          message: "Something's wrong. Please try again",
+        });
+        return;
+      }
+    },
+    async getMqttCredentialsForReconnection(){
+            try {
+        const config = {
+          headers: {
+            token: this.$store.state.auth.token,
+          },
+        };
+        const credentials = await this.$axios.post(
+          "/getmqttcredentialsforreconnection",
+          null,
+          config
+        );
+        console.log(credentials.data);
+        if (credentials.data.status === "success") {
+          this.client.options.username = credentials.data.username;
+          this.client.options.password = credentials.data.password;
+        } else {
+          this.$notify({
+            type: "danger",
+            icon: "tim-icons icon-alert-circle-exc",
+            message: "Something's wrong. Please try again",
+          });
+          return;
+        }
+      } catch (error) {
+        console.log(error.response);
+        this.$notify({
+          type: "danger",
+          icon: "tim-icons icon-alert-circle-exc",
+          message: "Something's wrong. Please try again",
+        });
+        return;
+      }
+    }
   },
   mounted() {
     this.initScrollbar();
-    this.startMqttClient();
     this.$store.dispatch("getNotifications");
+    setTimeout(() => {
+      this.startMqttClient();
+    }, 2000)
+
   },
 };
 </script>
